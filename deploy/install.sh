@@ -5,8 +5,10 @@ project=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 case "$project" in
   *[!a-zA-Z0-9_./-]*) echo "Use an install path containing only letters, numbers, slashes, dots, underscores, and hyphens." >&2; exit 1 ;;
 esac
-python3 -m venv --system-site-packages "$project/.venv"
-"$project/.venv/bin/python" -m pip install -r "$project/requirements.txt"
+command -v uv >/dev/null || { echo 'Install uv first: https://docs.astral.sh/uv/getting-started/installation/' >&2; exit 1; }
+cd "$project"
+uv venv --python /usr/bin/python3 --system-site-packages .venv
+uv sync --locked --no-dev --no-install-project
 "$project/.venv/bin/python" -c 'import pygame; from PIL import Image' >/dev/null
 mkdir -p "$HOME/.config/systemd/user" "$HOME/.config/autostart"
 for name in monitor3-player monitor3-kiosk; do

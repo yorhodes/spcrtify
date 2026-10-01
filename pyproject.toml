@@ -1,0 +1,9 @@
+[project]
+name = "spcrtify"
+version = "0.1.0"
+description = "A Spotify now-playing display for the Apple Monitor III"
+requires-python = ">=3.12"
+dependencies = ["Pillow>=10.0,<13"]
+
+[tool.uv]
+package = false

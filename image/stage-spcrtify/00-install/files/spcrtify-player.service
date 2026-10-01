@@ -1,0 +1,28 @@
+[Unit]
+Description=Spcrtify now-playing server
+After=local-fs.target spcrtify-provision.service nftables.service
+Wants=spcrtify-provision.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=notify
+User=spcrtify
+Group=spcrtify
+WorkingDirectory=/opt/spcrtify
+ExecStart=/opt/spcrtify/.venv/bin/python /opt/spcrtify/app.py --host 0.0.0.0 --data /var/lib/spcrtify
+Restart=always
+RestartSec=3
+WatchdogSec=20
+TimeoutStartSec=45
+StateDirectory=spcrtify
+StateDirectoryMode=0700
+UMask=0077
+Environment=PYTHONUNBUFFERED=1
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

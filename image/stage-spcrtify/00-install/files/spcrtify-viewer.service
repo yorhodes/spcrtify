@@ -1,0 +1,14 @@
+[Unit]
+Description=Spcrtify fullscreen display
+StartLimitIntervalSec=0
+
+[Service]
+Type=notify
+WorkingDirectory=/opt/spcrtify
+ExecStart=/opt/spcrtify/.venv/bin/python /opt/spcrtify/kiosk.py
+Environment=SDL_VIDEODRIVER=x11
+Environment=PYTHONUNBUFFERED=1
+Restart=always
+RestartSec=3
+WatchdogSec=20
+TimeoutStartSec=45

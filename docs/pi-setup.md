@@ -1,7 +1,7 @@
 # Raspberry Pi setup
 
 
-Use Raspberry Pi OS with a desktop session, Wi-Fi, SSH, and desktop auto-login.
+Use Raspberry Pi OS Trixie with a desktop session, Wi-Fi, SSH, and desktop auto-login.
 The Pi viewer uses **pygame / SDL**, keeping Chromium out of the 512 MB Pi's
 normal display path. The browser remains useful on your laptop for sign-in and
 display tuning. This setup has not yet been exercised on your physical Pi / CRT.
@@ -13,11 +13,13 @@ sudo apt update
 sudo apt install git python3-venv python3-pygame
 git clone https://github.com/yorhodes/spcrtify.git ~/spcrtify
 cd ~/spcrtify
+curl -LsSf https://astral.sh/uv/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
 sh deploy/install.sh
 ```
 
 The installer creates a virtual environment that can use the OS pygame package,
-installs Pillow, and installs two **user** services. The server starts at login;
+syncs the locked Python dependencies with uv, and installs two **user** services. The server starts at login;
 the fullscreen viewer starts through a desktop autostart entry after the graphical
 session is available. Both restart on failure. The installer does not edit boot
 files or change the system's power settings. No root service is needed.

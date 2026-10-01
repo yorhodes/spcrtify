@@ -1,0 +1,19 @@
+IMG_NAME='spcrtify-zero2w-arm64'
+PI_GEN_RELEASE='Spcrtify'
+RELEASE='trixie'
+STAGE_LIST='stage0 stage1 stage2 stage-spcrtify'
+DEPLOY_COMPRESSION='xz'
+COMPRESSION_LEVEL=3
+TARGET_HOSTNAME='spcrtify'
+LOCALE_DEFAULT='en_US.UTF-8'
+KEYBOARD_KEYMAP='us'
+TIMEZONE_DEFAULT='UTC'
+ENABLE_CLOUD_INIT=1
+ENABLE_SSH=1
+FIRST_USER_NAME='pi'
+# Required by pi-gen to skip its desktop user-renaming wizard. The stage LOCKS
+# this temporary build account before export; this is never a login password.
+FIRST_USER_PASS='locked-by-spcrtify-image-stage'
+DISABLE_FIRST_BOOT_USER_RENAME=1
+PASSWORDLESS_SUDO=0
+CONTAINER_NAME='spcrtify-image-build'

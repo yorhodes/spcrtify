@@ -7,3 +7,5 @@ assets/*cover*
 .env
 .env.*
 !.env.example
+.image-build/
+image/private/

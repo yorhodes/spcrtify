@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Spcrtify
+Comment=Now playing on the Monitor III
+Exec=/usr/local/bin/spcrtify-session
+Type=Application

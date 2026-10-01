@@ -9,6 +9,7 @@ import threading
 import time
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+from systemd_notify import Watchdog
 
 
 def target_rect(width: int, height: int, overscan: float, square_pixels=False):
@@ -61,11 +62,13 @@ def main():
     args = parser.parse_args()
     pygame.display.init()
     surface = pygame.display.set_mode((800, 600) if args.windowed else (0, 0), 0 if args.windowed else pygame.FULLSCREEN)
-    pygame.display.set_caption("Monitor /// Player")
+    pygame.display.set_caption("Spcrtify")
     pygame.mouse.set_visible(False)
     feed = Feed(args.url)
     thread = threading.Thread(target=feed.run, daemon=True)
     thread.start()
+    watchdog = Watchdog()
+    watchdog.ready()
     clock = pygame.time.Clock()
     last_image, last_size, last_overscan, scaled = None, None, None, None
     running = True
@@ -94,6 +97,7 @@ def main():
             if scaled and time.monotonic() - updated < 30:
                 surface.blit(scaled, scaled.get_rect(center=surface.get_rect().center))
             pygame.display.flip()
+            watchdog.tick()
             clock.tick(10)
     finally:
         feed.stop.set()

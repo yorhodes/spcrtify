@@ -1,0 +1,13 @@
+[Unit]
+Description=Import locally supplied Spotify connection
+After=local-fs.target
+Before=spcrtify-player.service
+ConditionPathExists=/boot/firmware/spcrtify-spotify.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/local/lib/spcrtify-first-boot.py
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/boot/firmware /var/lib/spcrtify

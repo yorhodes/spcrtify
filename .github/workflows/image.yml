@@ -1,0 +1,24 @@
+name: Build Pi image
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: spcrtify-image
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Raspberry Pi OS image
+        run: bash image/build.sh
+      - name: Upload image and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: spcrtify-zero2w-arm64
+          path: dist/image/
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: error

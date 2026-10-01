@@ -17,6 +17,7 @@ from PIL import Image, ImageOps
 
 from display import ART_SIZE, local_art, prepare_art, render_frame
 from spotify import Authorization, Spotify, SpotifyError
+from systemd_notify import Watchdog
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_SETTINGS = {"peak": 204, "contrast": 1.15, "gamma": 1.0, "overscan": 5, "idle_seconds": 300}
@@ -42,7 +43,7 @@ def validate_settings(value):
 class Demo:
     name, interval = "Demo", 1
     tracks = [("Night Drive", "The Night Shift", "After Hours", 242000),
-              ("Pacific Coast", "Slow Radio", "Open Water", 216000),
+              ("Blue Hour", "Slow Radio", "Open Water", 216000),
               ("Quiet Signals", "The Night Shift", "After Hours", 284000)]
 
     def __init__(self):
@@ -316,6 +317,11 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(500, {"error": "Cannot save settings; check the data folder"})
 
 
+class PlayerServer(ThreadingHTTPServer):
+    def service_actions(self):
+        self.watchdog.tick()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", default="127.0.0.1")
@@ -327,13 +333,15 @@ def main():
     if args.source == "json" and not args.feed:
         parser.error("--source json requires --feed /path/to/now-playing.json")
     player = Player(args)
-    server = ThreadingHTTPServer((args.host, args.port), Handler)
+    server = PlayerServer((args.host, args.port), Handler)
+    server.watchdog = Watchdog()
     server.daemon_threads = True
     server.player = player
     player.start()
-    print(f"Monitor /// Player: http://127.0.0.1:{args.port}", flush=True)
+    print(f"Spcrtify: http://127.0.0.1:{args.port}", flush=True)
     print(f"Pi display: http://127.0.0.1:{args.port}/?kiosk=1", flush=True)
     try:
+        server.watchdog.ready()
         server.serve_forever()
     except KeyboardInterrupt:
         pass
