@@ -26,7 +26,7 @@ not bundled. The demo artwork and metadata are original placeholders.
 ```sh
 uv run python -m unittest discover -s tests -v
 node --check web/app.js
-node --test tests/test_callback.cjs
+node --test tests/test_*.cjs
 sh -n deploy/install.sh
 sh -n deploy/start-kiosk.sh
 ```

@@ -6,6 +6,8 @@ The phone must stay on the same Wi-Fi and the network must permit devices to
 communicate; guest Wi-Fi/client isolation can prevent access.
 
 1. Scan the display’s QR and tap **Continue to Spotify**.
+   On iPhone or iPad, choose **Open Spotify app** to try approval using the
+   account already signed in to Spotify, or **Sign in through browser**.
 2. Approve access on Spotify.
 3. On the HTTPS callback page, tap **Return to Spcrtify**.
 4. The phone opens the local Pi callback. The Pi verifies the pending request,
@@ -25,6 +27,13 @@ Restarting reuses the saved connection. Network errors keep it and retry. An
 public Client ID, and brings back setup. Spotify currently gives developer-app
 refresh tokens a six-month lifetime; successful refresh does not extend it.
 [Spotify token lifecycle](https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens)
+
+The iOS app option is experimental. It uses the `spotify-action://authorize`
+link constructed by [Spotify's iOS authentication SDK](https://github.com/spotify/ios-auth/blob/main/Sources/SessionManager.swift),
+preserving the Pi's original callback, state and PKCE challenge. A webpage
+launch with our HTTPS callback is not a documented Spotify integration and
+still needs testing on an actual iPhone. Browser sign-in remains available;
+there is no timer that could interrupt approval in the Spotify app.
 
 ## One-time Spotify app configuration
 
