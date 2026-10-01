@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Connect Spotify · Spcrtify</title>
+  <link rel="stylesheet" href="/setup.css">
+  <script src="/setup.js" defer></script>
+</head>
+<body>
+  <main>
+    <p class="brand">Spcrtify</p>
+    <section id="sign-in">
+      <h1>Your music,<br>a new light.</h1>
+      <p>Connect Spotify to follow the music playing on your account. Audio stays on your chosen speaker.</p>
+      <p class="note">Keep this phone on the same Wi-Fi as your display.</p>
+      <form id="setup-form">
+        <details id="app-settings" hidden>
+          <summary>Use your own Spotify app</summary>
+          <label for="setup-client-id">Spotify app Client ID</label>
+          <input id="setup-client-id" type="text" maxlength="32" autocomplete="off" spellcheck="false">
+          <p class="note">Register this callback in your Spotify app:</p>
+          <code id="setup-callback"></code>
+        </details>
+        <p id="setup-error" class="error" role="alert" hidden></p>
+        <button id="setup-continue" type="submit" disabled>Continue to Spotify</button>
+      </form>
+    </section>
+    <section id="success" hidden aria-live="polite">
+      <h1>You’re connected.</h1>
+      <p>Start a record in Spotify. Your display will follow along and remember this connection after restarting.</p>
+      <a class="button" href="/">Open the player</a>
+    </section>
+    <p class="footnote">Your Spotify connection is saved on this display.</p>
+  </main>
+</body>
+</html>

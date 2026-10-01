@@ -8,6 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageOps
+import qrcode
 
 from render import text
 
@@ -136,13 +137,40 @@ def quantize_art(art: Image.Image, contrast: float, gamma: float) -> Image.Image
     return gray.point(lambda p: max(0, min(15, round(p * 15 / 255))))
 
 
+@lru_cache(maxsize=2)
+def setup_code(url: str) -> Image.Image:
+    # A full four-module quiet zone and three pixels per module survive scaling.
+    code = qrcode.QRCode(version=5, error_correction=qrcode.constants.ERROR_CORRECT_M,
+                         box_size=3, border=4)
+    code.add_data(url)
+    code.make(fit=False)
+    image = code.make_image(fill_color="black", back_color="white").convert("L")
+    image = image.resize((round(image.width / PIXEL_ASPECT), image.height), Image.Resampling.NEAREST)
+    return image.point(lambda value: 15 if value else 0)
+
+
+def draw_setup(frame, draw, url):
+    line(draw, (12, 13), "CONNECT SPOTIFY", 14, 40)
+    if url:
+        frame.paste(setup_code(url), (12, 31))
+        for y, value in ((48, "SCAN WITH"), (61, "YOUR PHONE"), (87, "SAME WI-FI"),
+                         (113, "SIGN IN ONCE"), (126, "THEN JUST"), (139, "PLAY MUSIC")):
+            line(draw, (175, y), value, 12, 15)
+        line(draw, (12, 176), url.split("/setup", 1)[0].removeprefix("http://"), 10, 40)
+    else:
+        line(draw, (26, 70), "WAITING FOR WI-FI", 14, 40)
+        line(draw, (26, 96), "SET UP WI-FI ON THE SD CARD", 10, 40)
+
+
 def render_frame(state: dict, settings: dict, now: float, art: Image.Image | None = None,
                  calibration: bool = False) -> Image.Image:
     frame = Image.new("L", (WIDTH, HEIGHT), 0)
     if state.get("blanked") and not calibration:
         return frame
     d = ImageDraw.Draw(frame)
-    if calibration:
+    if state.get("setup_needed") and not calibration:
+        draw_setup(frame, d, state.get("setup_url"))
+    elif calibration:
         d.rectangle((8, 8, 271, 183), outline=12, width=2)
         line(d, (20, 20), "MONITOR /// CALIBRATION", 15, 40)
         line(d, (20, 36), "ALL 16 STEPS SHOULD BE VISIBLE", 10, 40)

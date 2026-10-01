@@ -154,10 +154,15 @@ document.addEventListener("keydown", (event) => {
   else if (event.key === "ArrowLeft") {event.preventDefault(); control("previous");}
   else if (event.key.toLowerCase() === "c") toggleCalibration();
 });
-$("connect").addEventListener("click", () => {
+$("connect").addEventListener("click", async () => {
+  if (!["127.0.0.1", "localhost"].includes(location.hostname)) {
+    try {location.assign((await api("/api/spotify/pair", {})).url);}
+    catch (error) {toast(error.message);}
+    return;
+  }
   $("connect-error").hidden = true; $("connect-dialog").showModal();
   $("redirect-uri").textContent = `http://127.0.0.1:${location.port || 8765}/callback`;
-  if (!["127.0.0.1", "localhost"].includes(location.hostname)) $("local-note").textContent = "You are viewing the Pi remotely. Open this app through an SSH tunnel at 127.0.0.1 before signing in (see README).";
+  try {$("client-id").value = (await api("/api/spotify/config")).client_id;} catch (_) {}
 });
 $("close-dialog").addEventListener("click", () => $("connect-dialog").close());
 $("spotify-form").addEventListener("submit", async (event) => {

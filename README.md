@@ -22,15 +22,22 @@ Open [127.0.0.1:8765](http://127.0.0.1:8765). Demo mode works immediately. Use *
 
 ## Connect Spotify
 
-1. Create an app in the [Spotify developer dashboard](https://developer.spotify.com/dashboard).
-2. Register `http://127.0.0.1:8765/callback` as its redirect URI.
-3. Click **Connect Spotify**, enter the Client ID, and sign in.
+On the Pi image, scan the display’s QR with a phone on the same Wi-Fi, approve
+Spotify access, then tap **Return to Spcrtify**. The Pi remembers the connection
+after restarting. Audio stays on your existing Spotify device.
 
-The app owner needs Spotify Premium; additional users must be allowlisted. Sign-in uses PKCE with no client secret. Tokens stay in the ignored `.data/` directory and refresh automatically, including after restarts.
+For local development, register `http://127.0.0.1:8765/callback` in your
+[Spotify app](https://developer.spotify.com/dashboard), click **Connect Spotify**,
+and use its Client ID. The included public app ID works only for accounts
+allowlisted by the app owner; the owner needs Spotify Premium.
+
+Sign-in uses PKCE without a client secret. Tokens stay on the Pi. The small
+HTTPS callback is hosted on GitHub Pages and can move to any static HTTPS host.
+See [phone sign-in and callback setup](docs/login.md).
 
 ## Run on the Pi
 
-Use the [ready-to-flash image](docs/image.md) for automatic startup, crash recovery, composite NTSC output, and graceful shutdown. You can add Wi-Fi, SSH access, and an existing Spotify connection locally before flashing, so first boot needs no Spotify login.
+Use the [ready-to-flash image](docs/image.md) for automatic startup, crash recovery, composite NTSC output, and graceful shutdown. Add Wi-Fi and SSH access locally before flashing, then use QR sign-in on first boot. You can also seed an existing Spotify connection to skip that sign-in.
 
 The public image contains no credentials. A private image or personalized SD card contains your credentials and should stay private. The image build is tested separately from the physical Pi / CRT, which still needs verification on your hardware.
 

@@ -6,6 +6,8 @@ import argparse
 import io
 import json
 import math
+import os
+import socket
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -16,11 +18,25 @@ from urllib.request import urlopen
 from PIL import Image, ImageOps
 
 from display import ART_SIZE, local_art, prepare_art, render_frame
-from spotify import Authorization, Spotify, SpotifyError
+from onboarding import Pairing
+from spotify import Authorization, Spotify, SpotifyError, SpotifyReauthorization
 from systemd_notify import Watchdog
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_SETTINGS = {"peak": 204, "contrast": 1.15, "gamma": 1.0, "overscan": 5, "idle_seconds": 300}
+
+
+def spotify_config(args):
+    path = getattr(args, "spotify_config", None) or ROOT / "spotify-config.json"
+    try:
+        config = json.loads(path.read_text())
+    except FileNotFoundError:
+        config = {}
+    if not isinstance(config, dict):
+        raise ValueError("Spotify configuration must be an object")
+    return {"client_id": os.environ.get("SPOTIFY_CLIENT_ID") or config.get("client_id", ""),
+            "callback_uri": getattr(args, "spotify_callback", None) or os.environ.get("SPOTIFY_CALLBACK_URI")
+            or config.get("callback_uri")}
 
 
 def validate_settings(value):
@@ -104,11 +120,13 @@ class Player:
             self.settings.update(validate_settings(json.loads(self.settings_path.read_text())))
         except (OSError, ValueError):
             pass
-        self.auth = Authorization(args.data / "spotify.json", args.port)
+        self.spotify_config = spotify_config(args)
+        self.auth = Authorization(args.data / "spotify.json", args.port, self.spotify_config["callback_uri"])
+        self.pairing = Pairing(args.port, getattr(args, "setup_url", None))
+        self.appliance = getattr(args, "appliance", False)
         source = args.source
         if source == "auto":
-            import os
-            source = "spotify" if self.auth.path.exists() or os.environ.get("SPOTIFY_REFRESH_TOKEN") else "demo"
+            source = "spotify" if self.appliance or self.auth.path.exists() or os.environ.get("SPOTIFY_REFRESH_TOKEN") else "demo"
         self.provider = JsonFeed(args.feed) if source == "json" else Spotify(self.auth.path) if source == "spotify" else Demo()
         self.state = {"source": self.provider.name.upper(), "title": "", "is_playing": False, "controls": False}
         self.updated = self.last_active = time.monotonic()
@@ -136,7 +154,9 @@ class Player:
                 message = str(error) if isinstance(error, SpotifyError) else "Cannot read player data; retrying"
                 with self.lock:
                     if provider is self.provider:
-                        self.state = {**self.snapshot(), "is_playing": False, "error": message}
+                        self.state = ({"source": "SPOTIFY", "title": "", "is_playing": False, "controls": False,
+                                       "error": message} if isinstance(error, SpotifyReauthorization)
+                                      else {**self.state, "is_playing": False, "error": message})
                         self.updated = time.monotonic()
                 wait = getattr(error, "retry_after", 5)
             self.wake.wait(wait)
@@ -192,7 +212,28 @@ class Player:
 
     def frame(self, calibration=False):
         with self.lock:
-            return render_frame(self.snapshot(), self.settings, time.monotonic(), self.art, calibration)
+            state = self.snapshot()
+            if self.appliance and not state["connected"] and isinstance(self.provider, Spotify):
+                state.update(setup_needed=True, setup_url=self.pairing.url(), blanked=False, dimmed=False)
+            return render_frame(state, self.settings, time.monotonic(), self.art, calibration)
+
+    def setup_info(self):
+        client_id = self.spotify_config["client_id"]
+        with self.lock:
+            if isinstance(self.provider, Spotify):
+                client_id = os.environ.get("SPOTIFY_CLIENT_ID") or self.provider.tokens.get("client_id") or client_id
+        return {"client_id": client_id, "callback_uri": self.auth.relay_redirect,
+                "connected": self.snapshot()["connected"]}
+
+    def finish_sign_in(self, query):
+        # Retire the old provider before releasing its lock so an old polling
+        # request cannot overwrite the newly authorized account's tokens.
+        with self.lock:
+            provider = self.provider
+            with provider.lock if isinstance(provider, Spotify) else threading.RLock():
+                self.auth.finish(query)
+                self.switch("spotify")
+                self.pairing.complete()
 
     def switch(self, source):
         if source not in ("demo", "spotify", "json") or source == "json" and not self.args.feed:
@@ -200,6 +241,9 @@ class Player:
         provider = {"demo": lambda: Demo(), "spotify": lambda: Spotify(self.auth.path),
                     "json": lambda: JsonFeed(self.args.feed)}[source]()
         with self.lock:
+            if isinstance(self.provider, Spotify):
+                with self.provider.lock:
+                    self.provider.retired = True
             self.provider, self.art, self.art_key, self.art_error = provider, None, None, None
             self.state = dict(title="", source=provider.name.upper(), is_playing=False, controls=False)
             self.last_active = self.updated = time.monotonic()
@@ -244,10 +288,35 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    def local_host(self):
+        # Prevent a public site's DNS from being rebound onto this LAN server.
+        host = self.headers.get("Host", "")
+        try:
+            parsed = urlparse("http://" + host)
+            if parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment:
+                return False
+            hostname = (parsed.hostname or "").lower()
+            local_name = socket.gethostname().lower().removesuffix(".local")
+            allowed = {"localhost", "127.0.0.1", local_name, local_name + ".local"}
+            if self.player.auth.relay_redirect:
+                allowed.add(urlparse(self.player.auth.relay_redirect).hostname)
+            if hostname in allowed:
+                return True
+            from onboarding import local_url
+            local_url("http://" + host)
+            return True
+        except ValueError:
+            return False
+
     def do_GET(self):
+        if not self.local_host():
+            self.respond(403, {"error": "Open the player at its local Wi-Fi address"})
+            return
         parsed = urlparse(self.path)
         if parsed.path == "/api/state":
             self.respond(200, self.player.snapshot())
+        elif parsed.path == "/api/spotify/config":
+            self.respond(200, self.player.setup_info())
         elif parsed.path == "/api/frame.png":
             frame = self.player.frame(parse_qs(parsed.query).get("calibrate") == ["1"])
             buffer = io.BytesIO()
@@ -255,16 +324,18 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, buffer.getvalue(), "image/png")
         elif parsed.path == "/callback":
             try:
-                self.player.auth.finish(parse_qs(parsed.query))
-                self.player.switch("spotify")
+                self.player.finish_sign_in(parse_qs(parsed.query))
                 self.send_response(303)
-                self.send_header("Location", "/?connected=1")
+                self.send_header("Location", "/setup?connected=1")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Referrer-Policy", "no-referrer")
                 self.end_headers()
             except (ValueError, SpotifyError, OSError) as error:
                 import html
                 self.respond(400, f"<h1>Sign-in could not finish</h1><p>{html.escape(str(error))}</p><a href='/'>Return to player</a>", "text/html; charset=utf-8")
         else:
-            files = {"/": "index.html", "/app.js": "app.js", "/style.css": "style.css"}
+            files = {"/": "index.html", "/app.js": "app.js", "/style.css": "style.css",
+                     "/setup": "setup.html", "/setup.js": "setup.js", "/setup.css": "setup.css"}
             filename = files.get(parsed.path)
             if not filename:
                 self.respond(404, {"error": "Not found"})
@@ -273,6 +344,9 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200, (ROOT / "web" / filename).read_bytes(), types[filename.split(".")[-1]])
 
     def do_POST(self):
+        if not self.local_host():
+            self.respond(403, {"error": "Open the player at its local Wi-Fi address"})
+            return
         # A local appliance, bound to loopback by default. Reject cross-origin writes.
         origin = self.headers.get("Origin")
         if origin and urlparse(origin).netloc != self.headers.get("Host"):
@@ -303,9 +377,24 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/source":
                 self.player.switch(data.get("source"))
             elif path == "/api/spotify/connect":
-                # Redirect is a loopback URI; sign in locally or through an SSH tunnel.
-                client_id = data.get("client_id", "")
-                self.respond(200, {"url": self.player.auth.begin(client_id)})
+                client_id = data.get("client_id") or self.player.setup_info()["client_id"]
+                return_to = None
+                if data.get("pairing_token"):
+                    return_to = self.player.pairing.validate(data["pairing_token"])
+                elif (self.client_address[0] != "127.0.0.1"
+                      or urlparse("http://" + self.headers.get("Host", "")).hostname not in ("localhost", "127.0.0.1")):
+                    raise ValueError("Scan the display's QR to sign in from your phone")
+                self.respond(200, {"url": self.player.auth.begin(client_id, return_to)})
+                return
+            elif path == "/api/spotify/pair":
+                url = self.player.pairing.url()
+                if not url:
+                    raise ValueError("The Pi is waiting for Wi-Fi. Configure Wi-Fi before connecting Spotify.")
+                self.respond(200, {"url": url})
+                return
+            elif path == "/api/spotify/setup":
+                self.player.pairing.validate(data.get("pairing_token"))
+                self.respond(200, self.player.setup_info())
                 return
             else:
                 self.respond(404, {"error": "Not found"})
@@ -329,6 +418,10 @@ def main():
     parser.add_argument("--source", choices=("auto", "demo", "spotify", "json"), default="auto")
     parser.add_argument("--feed", type=Path)
     parser.add_argument("--data", type=Path, default=ROOT / ".data")
+    parser.add_argument("--appliance", action="store_true", help="show setup QR instead of demo when disconnected")
+    parser.add_argument("--setup-url", help="override the discovered Wi-Fi origin, e.g. http://192.168.1.20:8765")
+    parser.add_argument("--spotify-config", type=Path, help="public Client ID and callback JSON configuration")
+    parser.add_argument("--spotify-callback", help="HTTPS callback registered with Spotify; overrides configuration")
     args = parser.parse_args()
     if args.source == "json" and not args.feed:
         parser.error("--source json requires --feed /path/to/now-playing.json")

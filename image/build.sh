@@ -22,7 +22,7 @@ cp -R "$project/image/stage-spcrtify/." "$builder/stage-spcrtify/"
 mkdir -p "$builder/stage-spcrtify/00-install/files/app"
 # Explicit source allowlist: credentials, local settings, and generated files
 # can never enter the image, even if they are present in the working directory.
-git -C "$project" archive HEAD app.py display.py kiosk.py render.py spotify.py \
+git -C "$project" archive HEAD app.py display.py kiosk.py render.py spotify.py onboarding.py spotify-config.json \
   systemd_notify.py web tests LICENSE pyproject.toml uv.lock .python-version now-playing.example.json \
   | tar -xf - -C "$builder/stage-spcrtify/00-install/files/app"
 cp "$project/image/boot_config.py" "$builder/stage-spcrtify/00-install/files/boot_config.py"

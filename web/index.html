@@ -43,7 +43,7 @@
       <p>This display follows the music playing on your Spotify account. Audio stays on your chosen speaker.</p>
       <label for="client-id">Spotify app Client ID</label><input id="client-id" name="client_id" type="text" maxlength="32" autocomplete="off" placeholder="Your 32-character Client ID" required>
       <p class="setup-note">Create an app in the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noreferrer">Spotify developer dashboard ↗</a>. Add this exact redirect URI:</p><code id="redirect-uri">http://127.0.0.1:8765/callback</code>
-      <p class="setup-note" id="local-note">Sign in from the computer running this app. For a Pi, use the SSH tunnel described in the README.</p>
+      <p class="setup-note" id="local-note">Sign in from this computer. On the Pi, scan the display’s QR using a phone on the same Wi-Fi.</p>
       <p id="connect-error" class="error" role="alert" hidden></p>
       <button type="submit" class="solid" id="authorize">Continue to Spotify ↗</button>
     </form>

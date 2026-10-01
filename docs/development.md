@@ -26,6 +26,7 @@ not bundled. The demo artwork and metadata are original placeholders.
 ```sh
 uv run python -m unittest discover -s tests -v
 node --check web/app.js
+node --test tests/test_callback.cjs
 sh -n deploy/install.sh
 sh -n deploy/start-kiosk.sh
 ```
@@ -33,6 +34,9 @@ sh -n deploy/start-kiosk.sh
 Tests cover the signal palette and geometry, clean margins, artwork tone handling,
 demo playback, idle / wake behavior, missing artwork, JSON feeds, Spotify track /
 episode mapping, authentication, token refresh, rate limits, and the HTTP API.
+Phone setup tests cover state/proof validation, callback replay, cancellation,
+local-only return addresses, account replacement, saved-token recovery, and QR
+geometry. The callback tests use Node without browser/network access.
 Live Spotify and the composite hardware still require your account and Pi for
 end-to-end verification.
 

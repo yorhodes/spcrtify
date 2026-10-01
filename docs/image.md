@@ -111,19 +111,29 @@ on writable persistent storage; the root filesystem is not an overlay filesystem
 Open `http://spcrtify.local:8765` from a device on the same Wi-Fi to view the
 player and tune it. Port 8765 is filtered to Wi-Fi and loopback; it is unavailable
 on other interfaces. Anyone on that Wi-Fi can view and control playback. Do not
-forward it through your router. Spotify sign-in still uses the SSH tunnel below,
-because the registered callback is loopback HTTP. Phone-based OAuth would need
-an HTTPS callback with a trusted certificate; a local HTTP page alone does not
-complete that sign-in flow.
+forward it through your router.
 
-For Spotify sign-in:
+When no Spotify connection is saved, the display shows a QR for phone sign-in.
+Scan it on the same Wi-Fi, approve Spotify access, and tap **Return to Spcrtify**.
+The public HTTPS callback carries only the temporary authorization code back to
+your local Pi; the Pi exchanges it directly with Spotify. The QR stays readable
+while disconnected; normal idle dimming resumes after connection. A temporary
+network outage retains saved tokens and retries. An expired or revoked refresh
+token brings the QR back.
+
+The app owner must register `https://yorhodes.github.io/spcrtify/callback.html`
+as a redirect URI. For another Spotify app or callback host, see
+[login configuration](login.md). The image includes only the public Client ID and
+callback address, never a client secret or account tokens.
+
+An SSH tunnel remains available for local browser sign-in or maintenance:
 
 ```sh
 ssh -N -L 8765:127.0.0.1:8765 operator@spcrtify.local
 ```
 
-Open [127.0.0.1:8765](http://127.0.0.1:8765) to tune the display or sign in.
-Stop your laptop's local player first so port 8765 is free. Close the tunnel afterward.
+Open [127.0.0.1:8765](http://127.0.0.1:8765); local sign-in uses the loopback
+callback. Stop your laptop’s local player first so port 8765 is free.
 
 ```sh
 ssh operator@spcrtify.local

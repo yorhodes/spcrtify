@@ -32,6 +32,7 @@ uv venv --python /usr/bin/python3 --system-site-packages .venv
 uv sync --locked --no-dev --no-install-project
 .venv/bin/python -c 'import pygame; from PIL import Image'
 .venv/bin/python -m unittest discover -s tests -p test_player.py
+.venv/bin/python -m unittest discover -s tests -p test_onboarding.py
 rm -rf /var/cache/spcrtify-uv
 systemd-analyze verify /etc/systemd/system/spcrtify-player.service
 CHROOT
