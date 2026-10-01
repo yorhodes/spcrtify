@@ -1,0 +1,9 @@
+.venv/
+.data/
+__pycache__/
+dist/
+assets/*cover*
+.DS_Store
+.env
+.env.*
+!.env.example

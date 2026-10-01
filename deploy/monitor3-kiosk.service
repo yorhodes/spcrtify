@@ -1,0 +1,15 @@
+[Unit]
+Description=Monitor III fullscreen composite display
+After=monitor3-player.service
+Wants=monitor3-player.service
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT@
+ExecStart=@PROJECT@/.venv/bin/python kiosk.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+# Started by the desktop autostart entry after the display is available.

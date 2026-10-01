@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171916">
+  <title>Monitor /// — Now playing</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="wordmark" href="/" aria-label="Monitor III home">monitor <span>///</span><small>THE LISTENING ROOM</small></a>
+      <div class="header-actions"><span class="connection"><i></i><span id="source-status">Starting up</span></span><button id="connect" class="outline">Connect Spotify <span>↗</span></button></div>
+    </header>
+    <main>
+      <div class="intro"><div><p class="eyebrow">A LITTLE LESS SCREEN. A LITTLE MORE MUSIC.</p><h1>Now, just listen.</h1></div><div class="view-switch" role="group" aria-label="Display mode"><button id="preview-mode" class="selected" aria-pressed="true">Phosphor preview</button><button id="signal-mode" aria-pressed="false">Monitor output</button></div></div>
+      <section class="cabinet" aria-label="Monitor III now playing preview">
+        <div class="bezel"><div class="glass"><div class="signal-wrap"><canvas id="screen" width="280" height="192" tabindex="0" role="img" aria-label="Now playing display"></canvas><div class="glass-effects" aria-hidden="true"></div></div></div></div>
+        <div class="chin"><div class="badge">monitor <em>///</em></div><div class="hardware"><button id="brightness-knob" class="knob-control" aria-label="Adjust brightness"><span>BRIGHTNESS</span><i class="knob"></i></button><button id="contrast-knob" class="knob-control" aria-label="Adjust contrast"><span>CONTRAST</span><i class="knob contrast"></i></button><div class="power"><span class="power-dot"></span></div></div></div>
+      </section>
+      <div class="transport"><div class="track-info"><span class="tiny-label" id="play-status">NOW PLAYING</span><p id="track-description">Loading the listening room…</p></div><div class="transport-buttons"><button data-action="previous" aria-label="Previous track" title="Previous track (left arrow)">|◀</button><button data-action="toggle" id="play-pause" class="primary-control" aria-label="Pause" title="Play or pause (space)">Ⅱ</button><button data-action="next" aria-label="Next track" title="Next track (right arrow)">▶|</button></div><div class="transport-right"><button id="fullscreen" class="text-button">Fullscreen <span>⛶</span></button><button id="tune" class="text-button" aria-expanded="false" aria-controls="settings-panel">Tune display <span>☷</span></button></div></div>
+      <section id="settings-panel" class="settings" hidden aria-label="Display settings">
+        <div class="settings-heading"><div><p class="eyebrow">MAKE YOURSELF COMFORTABLE</p><h2>A softer kind of screen.</h2></div><button id="close-settings" class="icon-button" aria-label="Close display settings">×</button></div>
+        <div class="settings-grid">
+          <label>Peak luminance <output id="peak-value">80%</output><input id="peak" type="range" min="68" max="255" step="1" value="204"><small>Lower it if bright areas bloom.</small></label>
+          <label>Artwork contrast <output id="contrast-value">1.15</output><input id="contrast" type="range" min="0.5" max="2" step="0.05" value="1.15"><small>Keep detail in shadows and highlights.</small></label>
+          <label>Shadow detail <output id="gamma-value">1.00</output><input id="gamma" type="range" min="0.5" max="2" step="0.05" value="1"><small>Lift the darker tones in album covers.</small></label>
+          <label>Safe edge <output id="overscan-value">5%</output><input id="overscan" type="range" min="0" max="15" step="1" value="5"><small>Give the curved screen room to breathe.</small></label>
+        </div>
+        <div class="settings-bottom"><button id="calibrate" class="outline">Show calibration pattern</button><button id="reset-settings" class="text-button">Reset display</button></div>
+        <p class="display-note">280 × 192 · 16 luminance levels · 4:3 display · dim after 5 minutes paused · blank after 30</p>
+      </section>
+      <footer><span>BUILT FOR SLOW EVENINGS.</span><span id="footer-status">Original demo artwork & music metadata</span><button id="demo" class="text-button" hidden>Try demo</button></footer>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="connect-dialog">
+    <form id="spotify-form">
+      <div class="dialog-heading"><p class="eyebrow">YOUR MUSIC, A NEW LIGHT</p><button type="button" id="close-dialog" class="icon-button" aria-label="Close Spotify connection">×</button></div>
+      <h2>Bring Spotify<br>to the listening room.</h2>
+      <p>This display follows the music playing on your Spotify account. Audio stays on your chosen speaker.</p>
+      <label for="client-id">Spotify app Client ID</label><input id="client-id" name="client_id" type="text" maxlength="32" autocomplete="off" placeholder="Your 32-character Client ID" required>
+      <p class="setup-note">Create an app in the <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noreferrer">Spotify developer dashboard ↗</a>. Add this exact redirect URI:</p><code id="redirect-uri">http://127.0.0.1:8765/callback</code>
+      <p class="setup-note" id="local-note">Sign in from the computer running this app. For a Pi, use the SSH tunnel described in the README.</p>
+      <p id="connect-error" class="error" role="alert" hidden></p>
+      <button type="submit" class="solid" id="authorize">Continue to Spotify ↗</button>
+    </form>
+  </dialog>
+</body>
+</html>

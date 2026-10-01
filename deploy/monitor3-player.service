@@ -1,0 +1,15 @@
+[Unit]
+Description=Monitor III now-playing server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PROJECT@
+ExecStart=@PROJECT@/.venv/bin/python app.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+UMask=0077
+
+[Install]
+WantedBy=default.target
