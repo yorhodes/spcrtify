@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageEnhance, ImageOps
 
-from render import FONT, text
+from render import text
 
 WIDTH, HEIGHT = 280, 192
 PIXEL_ASPECT = (4 / 3) / (WIDTH / HEIGHT)
@@ -128,32 +128,6 @@ def playback_icon(kind: str) -> Image.Image:
     return icon.point(lambda value: max(0, min(peak, round(value * peak / 255))))
 
 
-@lru_cache(maxsize=1)
-def wordmark() -> Image.Image:
-    """Mixed-case Spcrtify, with a wider, brighter crt in the native raster."""
-    glyphs = {
-        "S": FONT["S"],
-        "p": ("00000", "00000", "11110", "10001", "11110", "10000", "10000"),
-        "c": ("00000", "00000", "01111", "10000", "10000", "10000", "01111"),
-        "r": ("00000", "00000", "10110", "11001", "10000", "10000", "10000"),
-        "t": ("00100", "00100", "11111", "00100", "00100", "00100", "00011"),
-        "i": ("00100", "00000", "01100", "00100", "00100", "00100", "01110"),
-        "f": ("00011", "00100", "00100", "01110", "00100", "00100", "00100"),
-        "y": ("00000", "00000", "10001", "10001", "01111", "00001", "01110"),
-    }
-    result = Image.new("L", (51, 7))
-    draw = ImageDraw.Draw(result)
-    x = 0
-    for char in "Spcrtify":
-        bold = char in "crt"
-        for y, row in enumerate(glyphs[char]):
-            for column, bit in enumerate(row):
-                if bit == "1":
-                    draw.rectangle((x + column, y, x + column + int(bold), y), fill=15 if bold else 11)
-        x += 7 if bold else 6
-    return result
-
-
 def quantize_art(art: Image.Image, contrast: float, gamma: float) -> Image.Image:
     # Fixed palette rather than adaptive colors, guaranteeing <=16 values.
     gray = ImageEnhance.Contrast(art).enhance(contrast)
@@ -190,7 +164,7 @@ def render_frame(state: dict, settings: dict, now: float, art: Image.Image | Non
     else:
         if state.get("source") == "SPOTIFY":
             frame.paste(spotify_mark(), (184, 19))
-            frame.paste(wordmark(), (214, 27))
+            line(d, (214, 27), "SPOTIFY", 12, 11)
         cover = art if art is not None else demo_art(state.get("art_seed", 0)) if state.get("source") == "DEMO" else missing_art()
         frame.paste(quantize_art(cover, settings["contrast"], settings["gamma"]), (12, 23))
         rows = title_lines(state["title"])

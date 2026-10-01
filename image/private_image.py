@@ -42,6 +42,9 @@ def main():
     with compressed.open('rb') as stream:
         digest = hashlib.file_digest(stream, 'sha256').hexdigest()
     Path('/output/SHA256SUMS').write_text(f'{digest}  {compressed.name}\n')
+    for result in [compressed, Path('/output/SHA256SUMS')]:
+        os.chmod(result, 0o600)
+        os.chown(result, int(os.environ.get('LOCAL_UID', '0')), int(os.environ.get('LOCAL_GID', '0')))
 
 
 if __name__ == '__main__':

@@ -84,8 +84,9 @@ Spotify seed into `/var/lib/spcrtify/spotify.json` with owner-only permissions,
 syncs it to storage, and removes the seed from the boot partition.
 
 Baking a connection skips another sign-in, not OAuth itself: you need an existing
-Spotify authorization. Refresh tokens are renewed by the Pi. Access can still be
-revoked, in which case reconnect through the browser.
+Spotify authorization. The Pi renews access tokens automatically. Spotify
+[limits refresh tokens to six months](https://developer.spotify.com/documentation/web-api/tutorials/refreshing-tokens),
+after which you need to reconnect. You also need to reconnect if access is revoked.
 
 ## Power-up and recovery
 

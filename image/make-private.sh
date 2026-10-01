@@ -6,7 +6,7 @@ if [ "$#" -lt 2 ]; then
   echo 'Usage: bash image/make-private.sh BASE.img.xz OUTPUT_DIRECTORY --ssh-key KEY.pub --wifi-ssid SSID [--spotify-from spotify.json] [other personalize.py options]' >&2
   exit 1
 fi
-base=$(python3 -c 'import pathlib,sys;print(pathlib.Path(sys.argv[1]).resolve())' "$1")
+base=$(uv run --project "$project" --locked python -c 'import pathlib,sys;print(pathlib.Path(sys.argv[1]).resolve())' "$1")
 output=$2
 shift 2
 mkdir -p "$output"
@@ -18,10 +18,11 @@ fi
 seed=$(mktemp -d "${TMPDIR:-/tmp}/spcrtify-private.XXXXXX")
 trap 'rm -rf "$seed"' EXIT
 touch "$seed/config.txt" "$seed/cmdline.txt"
-python3 "$project/image/personalize.py" --boot "$seed" "$@"
+uv run --project "$project" --locked python "$project/image/personalize.py" --boot "$seed" "$@"
 echo 'Creating personal image locally. Do not upload or share this image.'
 docker build -t spcrtify-personalizer -f "$project/image/Personalizer.Dockerfile" "$project/image"
 docker run --rm --privileged \
+  -e "LOCAL_UID=$(id -u)" -e "LOCAL_GID=$(id -g)" \
   --mount "type=bind,source=$base,target=/base.img.xz,readonly" \
   --mount "type=bind,source=$seed,target=/seed,readonly" \
   --mount "type=bind,source=$output,target=/output" \

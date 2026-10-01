@@ -13,7 +13,7 @@ install -D -m 644 files/watchdog.conf "${ROOTFS_DIR}/etc/systemd/system.conf.d/9
 install -D -m 644 files/journal.conf "${ROOTFS_DIR}/etc/systemd/journald.conf.d/90-spcrtify.conf"
 install -D -m 644 files/sshd.conf "${ROOTFS_DIR}/etc/ssh/sshd_config.d/90-spcrtify.conf"
 install -D -m 644 files/nftables.conf "${ROOTFS_DIR}/etc/nftables.conf"
-python3 files/boot_config.py "${ROOTFS_DIR}/boot/firmware"
+on_chroot -c 'python3 - /boot/firmware' < files/boot_config.py
 on_chroot <<'CHROOT'
 usermod -L pi
 usermod -s /usr/sbin/nologin pi

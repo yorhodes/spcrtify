@@ -36,6 +36,7 @@ def personalize(boot, username, hostname, key, ssid, password, country="US", tim
                    "groups": ["adm", "sudo"], "sudo": "ALL=(ALL) NOPASSWD:ALL",
                    "ssh_authorized_keys": [key.strip()]}],
         "package_update": False, "package_upgrade": False,
+        "runcmd": [["raspi-config", "nonint", "do_wifi_country", country], ["rfkill", "unblock", "wifi"]],
     }
     network = {"version": 2, "renderer": "NetworkManager", "wifis": {"wlan0": {
         "dhcp4": True, "optional": True, "regulatory-domain": country,
