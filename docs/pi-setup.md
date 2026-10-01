@@ -138,4 +138,3 @@ For a later appliance build, a read-only root / overlay filesystem can reduce
 writes, but `.data/spotify.json` and display settings still need durable writable
 storage because Spotify refresh tokens can rotate. Configure and test that after
 the normal setup works.
-
